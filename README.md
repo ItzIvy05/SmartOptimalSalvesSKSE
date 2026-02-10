@@ -6,8 +6,6 @@
 
 Just like my Press E to Heal Followers SKSE i moved the Papyrus script for the inventory scanning function to SKSE, making the process instant, and it should eliminate the lag. You still need the original mod, and it will function the same way how original mod did.
 
-✅ You **still need the original mod** — this is a **SKSE patch** and it behaves the same way the original mod does.
-
 ---
 
 <div align="center">
