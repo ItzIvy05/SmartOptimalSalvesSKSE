@@ -2,8 +2,58 @@
 #include <SKSE/SKSE.h>
 
 #include <cstdint>
+#include <fstream>
+#include <string>
+#include <unordered_set>
 
 namespace zzzPotionHotkeySKSE {
+    static std::unordered_set<RE::FormID> g_excludedForms;
+
+    static void LoadExclusions() {
+        std::ifstream file("Data/SKSE/Plugins/SmartOptimalSalves.ini");
+        if (!file.is_open()) {
+            return;
+        }
+
+        auto* dh = const_cast<RE::TESDataHandler*>(RE::TESDataHandler::GetSingleton());
+        if (!dh) {
+            return;
+        }
+
+        std::string line;
+        while (std::getline(file, line)) {
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+
+            if (line.empty() || line[0] == ';' || line[0] == '#' || line[0] == '[') {
+                continue;
+            }
+
+            const auto colon = line.find(':');
+            if (colon == std::string::npos) {
+                continue;
+            }
+
+            const std::string plugin = line.substr(0, colon);
+            const std::string formStr = line.substr(colon + 1);
+
+            RE::FormID localID = 0;
+            try {
+                localID = std::stoul(formStr, nullptr, 16);
+            } catch (...) {
+                continue;
+            }
+
+            auto* form = dh->LookupForm(localID, plugin);
+            if (!form) {
+                continue;
+            }
+
+            g_excludedForms.insert(form->GetFormID());
+        }
+    }
+
     static float StrengthFromEffect(RE::Effect* a_eff) {
         if (!a_eff) {
             return 0.0f;
@@ -62,7 +112,8 @@ namespace zzzPotionHotkeySKSE {
         return 0.0f;
     }
 
-    static RE::AlchemyItem* FindOptimalPotionImpl(RE::Actor* a_actor, RE::BGSKeyword* a_restoreKW, float a_deficit, bool a_allowOH, bool a_prioritizeOH) {
+    static RE::AlchemyItem* FindOptimalPotionImpl(RE::Actor* a_actor, RE::BGSKeyword* a_restoreKW, float a_deficit,
+                                                  bool a_allowOH, bool a_prioritizeOH) {
         if (!a_actor || !a_restoreKW) {
             return nullptr;
         }
@@ -71,9 +122,8 @@ namespace zzzPotionHotkeySKSE {
             return nullptr;
         }
 
-        const auto invCounts = a_actor->GetInventoryCounts([](RE::TESBoundObject& a_obj) {
-            return a_obj.GetFormType() == RE::FormType::AlchemyItem; 
-            });
+        const auto invCounts = a_actor->GetInventoryCounts(
+            [](RE::TESBoundObject& a_obj) { return a_obj.GetFormType() == RE::FormType::AlchemyItem; });
 
         RE::AlchemyItem* smallestBigger = nullptr;
         RE::AlchemyItem* biggestSmaller = nullptr;
@@ -88,6 +138,10 @@ namespace zzzPotionHotkeySKSE {
 
             auto* alch = obj->As<RE::AlchemyItem>();
             if (!alch) {
+                continue;
+            }
+
+            if (g_excludedForms.count(alch->GetFormID())) {
                 continue;
             }
 
@@ -154,6 +208,13 @@ namespace zzzPotionHotkeySKSE {
 
 SKSEPluginLoad(const SKSE::LoadInterface* a_skse) {
     SKSE::Init(a_skse);
+
+    SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* a_msg) {
+        if (a_msg->type == SKSE::MessagingInterface::kDataLoaded) {
+            zzzPotionHotkeySKSE::LoadExclusions();
+        }
+    });
+
     SKSE::GetPapyrusInterface()->Register(zzzPotionHotkeySKSE::Bind);
     return true;
 }
