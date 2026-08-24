@@ -1,11 +1,3 @@
-#include <RE/Skyrim.h>
-#include <SKSE/SKSE.h>
-
-#include <cstdint>
-#include <fstream>
-#include <string>
-#include <unordered_set>
-
 namespace zzzPotionHotkeySKSE {
     static std::unordered_set<RE::FormID> g_excludedForms;
 
@@ -112,8 +104,7 @@ namespace zzzPotionHotkeySKSE {
         return 0.0f;
     }
 
-    static RE::AlchemyItem* FindOptimalPotionImpl(RE::Actor* a_actor, RE::BGSKeyword* a_restoreKW, float a_deficit,
-                                                  bool a_allowOH, bool a_prioritizeOH) {
+    static RE::AlchemyItem* FindOptimalPotionImpl(RE::Actor* a_actor, RE::BGSKeyword* a_restoreKW, float a_deficit, bool a_allowOH, bool a_prioritizeOH) {
         if (!a_actor || !a_restoreKW) {
             return nullptr;
         }
@@ -195,8 +186,7 @@ namespace zzzPotionHotkeySKSE {
         return nullptr;
     }
 
-    static RE::AlchemyItem* FindOptimalPotion(RE::StaticFunctionTag*, RE::Actor* a_actor, RE::BGSKeyword* a_restoreKW,
-                                              float a_deficit, bool a_allowOH, bool a_prioritizeOH) {
+    static RE::AlchemyItem* FindOptimalPotion(RE::StaticFunctionTag*, RE::Actor* a_actor, RE::BGSKeyword* a_restoreKW, float a_deficit, bool a_allowOH, bool a_prioritizeOH) {
         return FindOptimalPotionImpl(a_actor, a_restoreKW, a_deficit, a_allowOH, a_prioritizeOH);
     }
 
